@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -24,6 +25,7 @@ type Server struct {
 	PublicKey  [32]byte
 	Storage    *Storage.Client
 	Sessions   map[string]*ServerSession
+	SessionMu  sync.RWMutex
 }
 
 func NewServer() (*Server, error) {
@@ -67,6 +69,8 @@ func NewServer() (*Server, error) {
 }
 
 func (s *Server) ValidateEAPI(sessionID string, receivedEAPI string) bool {
+	s.SessionMu.Lock()
+	defer s.SessionMu.Unlock()
 	session, exists := s.Sessions[sessionID]
 	if !exists {
 		return false
@@ -132,6 +136,8 @@ func (s *Server) HandleKeyExchange(c *gin.Context) {
 		return
 	}
 
+	s.SessionMu.Lock()
+	defer s.SessionMu.Unlock()
 	s.Sessions[sessionID] = &ServerSession{
 		K3:        k3,
 		LastUsed:  time.Now(),
@@ -158,7 +164,9 @@ func (s *Server) HandleTunnel(callback func(string) string) gin.HandlerFunc {
 			return
 		}
 
+		s.SessionMu.RLock()
 		session := s.Sessions[sessionID]
+		defer s.SessionMu.RUnlock()
 		encryptedData := c.PostForm("Data")
 		decrypted, err := Cipher.DecryptAES(encryptedData, session.K3)
 		if err != nil {
