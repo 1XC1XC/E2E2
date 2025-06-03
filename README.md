@@ -33,15 +33,17 @@ E2-E2 encryption is a layered security protocol designed to establish an ephemer
 - Go **1.24.3** or higher
 
 ### Starting the Server
+The server library is in `Server/`, with an example command in `Server/cmd`.
 ```bash
-go run ./Server
+go run ./Server/cmd
 ```
 The server listens on port `8080`.
 
 ### Running the Client
+The client library is in `Client/`, with an example command in `Client/cmd`.
 Run the client in a separate terminal after the server has started:
 ```bash
-go run ./Client
+go run ./Client/cmd
 ```
 The `sh/run.sh` script can also be used to start the server and repeatedly run the client.
 
