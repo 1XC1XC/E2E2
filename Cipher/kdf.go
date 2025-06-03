@@ -25,6 +25,12 @@ func DeriveK3(k2 []byte) ([]byte, error) {
 
 func DeriveEAPI(k3 []byte, timestamp int64) []byte {
 	h := hmac.New(sha256.New, k3)
-	binary.Write(h, binary.BigEndian, timestamp)
+	// Writing to an in-memory hash should never fail but we capture the
+	// error for completeness.
+	if err := binary.Write(h, binary.BigEndian, timestamp); err != nil {
+		// panic is acceptable here since failure indicates a bug in the
+		// underlying implementation and cannot be recovered from.
+		panic(err)
+	}
 	return h.Sum(nil)
 }
