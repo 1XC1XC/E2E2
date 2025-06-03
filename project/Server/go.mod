@@ -33,7 +33,6 @@ require (
 
 require (
 	E2E2/Cipher v0.0.0
-	E2E2/Client v0.0.0
 	E2E2/Storage v0.0.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/google/uuid v1.6.0

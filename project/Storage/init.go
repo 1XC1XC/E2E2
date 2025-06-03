@@ -11,7 +11,7 @@ func Init(Name string) *Client {
 	}
 
 	if _, err := os.Stat(client.File); os.IsNotExist(err) {
-		client.Save() 
+		client.Save()
 	} else {
 		client.Load()
 	}
