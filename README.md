@@ -28,3 +28,22 @@ E2-E2 encryption is a layered security protocol designed to establish an ephemer
 - **Forward Secrecy**: Compromise of **K1** does not expose **K3**, as **K3** is derived using information that is not transmitted.
 - **Ephemeral Security**: By deriving **K2** and **K3** from **K1** and the **API Key**, the protocol ensures that each communication session is independent and secure.
 - **Dynamic API Keys**: **K3** can be used to generate session-based API keys, adding another layer of security for authenticated requests.
+
+### Requirements
+- Go **1.24.3** or higher
+
+### Starting the Server
+```bash
+go run ./Server
+```
+The server listens on port `8080`.
+
+### Running the Client
+Run the client in a separate terminal after the server has started:
+```bash
+go run ./Client
+```
+The `sh/run.sh` script can also be used to start the server and repeatedly run the client.
+
+### Session Files
+`client_session.json` and `server_sessions.json` are created automatically to store session data. These files are ignored by git.
