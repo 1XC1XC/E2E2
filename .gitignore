@@ -1,4 +1,4 @@
 client_session.json
 server_sessions.json
-Client/cmd/main
-Server/cmd/main
+project/Client/cmd/main
+project/Server/cmd/main
