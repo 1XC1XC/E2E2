@@ -33,19 +33,19 @@ E2-E2 encryption is a layered security protocol designed to establish an ephemer
 - Go **1.24.3** or higher
 
 ### Starting the Server
-The server library is in `Server/`, with an example command in `Server/cmd`.
+The server library is in `project/Server`, with an example command in `project/Server/cmd`.
 ```bash
-go run ./Server/cmd
+go run ./project/Server/cmd
 ```
 The server listens on port `8080`.
 
 ### Running the Client
-The client library is in `Client/`, with an example command in `Client/cmd`.
+The client library is in `project/Client`, with an example command in `project/Client/cmd`.
 Run the client in a separate terminal after the server has started:
 ```bash
-go run ./Client/cmd
+go run ./project/Client/cmd
 ```
-The `sh/run.sh` script can also be used to start the server and repeatedly run the client.
+The `project/sh/run.sh` script can also be used to start the server and repeatedly run the client.
 
 ### Session Files
 `client_session.json` and `server_sessions.json` are created automatically to store session data. These files are ignored by git.
