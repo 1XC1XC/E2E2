@@ -71,13 +71,21 @@ func (s *Server) ValidateEAPI(sessionID string, receivedEAPI string) bool {
 
 func (s *Server) HandleKeyExchange(c *gin.Context) {
 	clientPublicKeyHex := c.PostForm("ClientPublicKey")
-	clientPublicKey, err := hex.DecodeString(clientPublicKeyHex)
+	clientPublicKeyBytes, err := hex.DecodeString(clientPublicKeyHex)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"Error": "Invalid ClientPublicKey"})
 		return
 	}
 
-	k1, err := Cipher.CreateSharedKey(s.PrivateKey, *(*[32]byte)(clientPublicKey))
+	if len(clientPublicKeyBytes) != 32 {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "Invalid ClientPublicKey length"})
+		return
+	}
+
+	var clientPublicKey [32]byte
+	copy(clientPublicKey[:], clientPublicKeyBytes)
+
+	k1, err := Cipher.CreateSharedKey(s.PrivateKey, clientPublicKey)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Failed to create K1"})
 		return
