@@ -1,14 +1,14 @@
 package main
 
 import (
-        "E2E2/Cipher"
-        "E2E2/Storage"
-        "encoding/hex"
-        "fmt"
-        "log"
-        "net/http"
-        "sync"
-        "time"
+	"E2E2/Cipher"
+	"E2E2/Storage"
+	"encoding/hex"
+	"fmt"
+	"log"
+	"net/http"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -21,11 +21,11 @@ type ServerSession struct {
 }
 
 type Server struct {
-        PrivateKey [32]byte
-        PublicKey  [32]byte
-        Storage    *Storage.Client
-        Sessions   map[string]*ServerSession
-        SessionMu  sync.RWMutex
+	PrivateKey [32]byte
+	PublicKey  [32]byte
+	Storage    *Storage.Client
+	Sessions   map[string]*ServerSession
+	SessionMu  sync.RWMutex
 }
 
 func NewServer() (*Server, error) {
@@ -45,19 +45,18 @@ func NewServer() (*Server, error) {
 }
 
 func (s *Server) ValidateEAPI(sessionID string, receivedEAPI string) bool {
-        s.SessionMu.Lock()
-        session, exists := s.Sessions[sessionID]
-        if !exists {
-                s.SessionMu.Unlock()
-                return false
-        }
+	s.SessionMu.Lock()
+	defer s.SessionMu.Unlock()
+	session, exists := s.Sessions[sessionID]
+	if !exists {
+		return false
+	}
 
-        currentTime := time.Now()
-        if currentTime.After(session.ExpiresAt) {
-                delete(s.Sessions, sessionID)
-                s.SessionMu.Unlock()
-                return false
-        }
+	currentTime := time.Now()
+	if currentTime.After(session.ExpiresAt) {
+		delete(s.Sessions, sessionID)
+		return false
+	}
 
 	timestamp := currentTime.Unix() / 30
 	expectedEAPI := hex.EncodeToString(Cipher.DeriveEAPI(session.K3, timestamp))
@@ -70,9 +69,8 @@ func (s *Server) ValidateEAPI(sessionID string, receivedEAPI string) bool {
 		}
 	}
 
-        session.LastUsed = currentTime
-        s.SessionMu.Unlock()
-        return true
+	session.LastUsed = currentTime
+	return true
 }
 
 func (s *Server) HandleKeyExchange(c *gin.Context) {
@@ -111,13 +109,13 @@ func (s *Server) HandleKeyExchange(c *gin.Context) {
 		return
 	}
 
-        s.SessionMu.Lock()
-        s.Sessions[sessionID] = &ServerSession{
-                K3:        k3,
-                LastUsed:  time.Now(),
-                ExpiresAt: time.Now().Add(24 * time.Hour), // Session expires after 24 hours
-        }
-        s.SessionMu.Unlock()
+	s.SessionMu.Lock()
+	defer s.SessionMu.Unlock()
+	s.Sessions[sessionID] = &ServerSession{
+		K3:        k3,
+		LastUsed:  time.Now(),
+		ExpiresAt: time.Now().Add(24 * time.Hour), // Session expires after 24 hours
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"ServerPublicKey": hex.EncodeToString(s.PublicKey[:]),
@@ -135,10 +133,10 @@ func (s *Server) HandleTunnel(callback func(string) string) gin.HandlerFunc {
 			return
 		}
 
-                s.SessionMu.RLock()
-                session := s.Sessions[sessionID]
-                s.SessionMu.RUnlock()
-                encryptedData := c.PostForm("Data")
+		s.SessionMu.RLock()
+		session := s.Sessions[sessionID]
+		defer s.SessionMu.RUnlock()
+		encryptedData := c.PostForm("Data")
 		decrypted, err := Cipher.DecryptAES(encryptedData, session.K3)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"Error": "Failed to decrypt"})
