@@ -96,6 +96,8 @@ func (s *Server) ValidateEAPI(sessionID string, receivedEAPI string) bool {
 	}
 
 	session.LastUsed = currentTime
+	// Persist updated session metadata so it survives restarts.
+	s.Storage.Save()
 	return true
 }
 
