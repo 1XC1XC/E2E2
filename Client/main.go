@@ -91,12 +91,19 @@ func (c *Client) ExchangeKeys() error {
 		return fmt.Errorf("server returned an error: %s", result.Error)
 	}
 
-	serverPublicKey, err := hex.DecodeString(result.ServerPublicKey)
+	serverPublicKeyBytes, err := hex.DecodeString(result.ServerPublicKey)
 	if err != nil {
 		return fmt.Errorf("failed to decode server public key: %w", err)
 	}
 
-	c.K1, err = Cipher.CreateSharedKey(c.PrivateKey, *(*[32]byte)(serverPublicKey))
+	if len(serverPublicKeyBytes) != 32 {
+		return fmt.Errorf("server public key length mismatch")
+	}
+
+	var serverPublicKey [32]byte
+	copy(serverPublicKey[:], serverPublicKeyBytes)
+
+	c.K1, err = Cipher.CreateSharedKey(c.PrivateKey, serverPublicKey)
 	if err != nil {
 		return fmt.Errorf("failed to create K1: %w", err)
 	}
