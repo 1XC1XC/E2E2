@@ -1,6 +1,6 @@
 module E2E2/Client
 
-go 1.23.1
+go 1.24.3
 
 require (
 	E2E2/Cipher v0.0.0
