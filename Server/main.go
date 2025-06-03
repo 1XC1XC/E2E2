@@ -34,11 +34,35 @@ func NewServer() (*Server, error) {
 
 	storage := Storage.Init("server_sessions")
 
+	sessions := make(map[string]*ServerSession)
+
+	// Populate in-memory sessions from persisted data. Each entry in the
+	// JSON file is stored as a session ID mapped to the hex encoded K3 key.
+	for key, v := range storage.Data {
+		id, ok := key.(string)
+		if !ok {
+			continue
+		}
+		k3Hex, ok := v.(string)
+		if !ok {
+			continue
+		}
+		k3, err := hex.DecodeString(k3Hex)
+		if err != nil {
+			continue
+		}
+		sessions[id] = &ServerSession{
+			K3:        k3,
+			LastUsed:  time.Now(),
+			ExpiresAt: time.Now().Add(24 * time.Hour),
+		}
+	}
+
 	return &Server{
 		PrivateKey: privateKey,
 		PublicKey:  publicKey,
 		Storage:    storage,
-		Sessions:   make(map[string]*ServerSession),
+		Sessions:   sessions,
 	}, nil
 }
 
@@ -50,7 +74,10 @@ func (s *Server) ValidateEAPI(sessionID string, receivedEAPI string) bool {
 
 	currentTime := time.Now()
 	if currentTime.After(session.ExpiresAt) {
+		// Remove expired sessions from memory and persistent storage.
 		delete(s.Sessions, sessionID)
+		delete(s.Storage.Data, sessionID)
+		s.Storage.Save()
 		return false
 	}
 
@@ -110,6 +137,10 @@ func (s *Server) HandleKeyExchange(c *gin.Context) {
 		LastUsed:  time.Now(),
 		ExpiresAt: time.Now().Add(24 * time.Hour), // Session expires after 24 hours
 	}
+
+	// Persist the new session so it survives server restarts.
+	s.Storage.Set(sessionID, hex.EncodeToString(k3))
+	s.Storage.Save()
 
 	c.JSON(http.StatusOK, gin.H{
 		"ServerPublicKey": hex.EncodeToString(s.PublicKey[:]),
